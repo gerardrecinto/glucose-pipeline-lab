@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>glucose-pipeline-lab</title>
+<meta name="description" content="A Java service that ingests glucose sensor readings, rejects and counts bad rows, computes the standard CGM metrics and serves them over REST, with an insight layer that can only cite the numbers. Synthetic data.">
+<style>
+:root{--bg:#fbfbf9;--fg:#16181d;--mute:#5b6270;--line:#e3e5e8;--card:#fff;--accent:#0f766e;--bad:#b42318;--code:#f1f3f4}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1216;--fg:#e8eaed;--mute:#9aa3b0;--line:#262c35;--card:#161b22;--accent:#2dd4bf;--bad:#f97066;--code:#1b212a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:48px 16px 80px}
+h1{font-size:2.2rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:48px 0 12px;letter-spacing:-.01em}
+p{margin:0 0 14px}
+.lede{font-size:1.15rem;color:var(--mute)}
+.pill{display:inline-block;padding:2px 10px;border:1px solid var(--line);border-radius:999px;color:var(--mute);font-size:.85rem;margin-right:6px}
+a{color:var(--accent)}
+pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;font-size:.85rem;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{margin:0 0 6px;font-size:1rem}
+.card p{margin:0;color:var(--mute);font-size:.93rem}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600}
+.note{border-left:3px solid var(--bad);padding:8px 14px;background:var(--card);border-radius:0 8px 8px 0;color:var(--mute);font-size:.93rem}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--fg);font:13px -apple-system,Segoe UI,sans-serif}
+svg .box{fill:var(--card);stroke:var(--line)}
+svg .hot{stroke:var(--accent);stroke-width:1.5}
+svg .arrow{stroke:var(--mute);fill:none;stroke-width:1.4}
+svg .sub{fill:var(--mute);font-size:11.5px}
+footer{margin-top:56px;color:var(--mute);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+<p><span class="pill">Java 17</span><span class="pill">REST</span><span class="pill">13 tests</span><span class="pill">synthetic data</span></p>
+<h1>glucose-pipeline-lab</h1>
+<p class="lede">Ingest glucose sensor readings, reject and count the bad ones, store them so a retry is safe, compute the standard CGM report metrics, and serve them over a REST API. The insight layer can say what the numbers show against the consensus targets, and nothing else.</p>
+<p><a href="https://github.com/gerardrecinto/glucose-pipeline-lab">Source on GitHub</a></p>
+<div class="note">Synthetic data only. Not a medical device, no FDA, ISO or HIPAA claim, and the metrics were not validated against clinical data.</div>
+
+<h2>How data moves</h2>
+<svg viewBox="0 0 820 190" role="img" aria-label="Pipeline: sensor batch, validator, idempotent store, stats, insight guard, REST API">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a93a1"/></marker></defs>
+<rect class="box" x="8" y="60" width="110" height="64" rx="10"/><text x="63" y="88" text-anchor="middle">Sensor batch</text><text class="sub" x="63" y="106" text-anchor="middle">POST /v1/readings</text>
+<rect class="box hot" x="148" y="60" width="110" height="64" rx="10"/><text x="203" y="88" text-anchor="middle">Validator</text><text class="sub" x="203" y="106" text-anchor="middle">reason codes</text>
+<rect class="box hot" x="288" y="60" width="120" height="64" rx="10"/><text x="348" y="88" text-anchor="middle">Store</text><text class="sub" x="348" y="106" text-anchor="middle">JSONL + index, idempotent</text>
+<rect class="box" x="438" y="60" width="100" height="64" rx="10"/><text x="488" y="88" text-anchor="middle">Stats</text><text class="sub" x="488" y="106" text-anchor="middle">TIR, CV, GMI</text>
+<rect class="box hot" x="568" y="60" width="110" height="64" rx="10"/><text x="623" y="88" text-anchor="middle">Insight guard</text><text class="sub" x="623" y="106" text-anchor="middle">cites its numbers</text>
+<rect class="box" x="708" y="60" width="104" height="64" rx="10"/><text x="760" y="88" text-anchor="middle">REST API</text><text class="sub" x="760" y="106" text-anchor="middle">summary, readings</text>
+<path class="arrow" d="M118 92H146" marker-end="url(#a)"/><path class="arrow" d="M258 92H286" marker-end="url(#a)"/><path class="arrow" d="M408 92H436" marker-end="url(#a)"/><path class="arrow" d="M538 92H566" marker-end="url(#a)"/><path class="arrow" d="M678 92H706" marker-end="url(#a)"/>
+<path class="arrow" d="M203 124V160H620" marker-end="url(#a)" stroke-dasharray="4 4"/><text class="sub" x="330" y="178">rejected rows: returned to the sender and counted at /metrics</text>
+</svg>
+
+<h2>Real output</h2>
+<p>From <code>java -jar target/glucose-pipeline.jar --demo</code>, subject-002 (high variability, lows):</p>
+<pre>$ curl -s localhost:8080/v1/subjects/subject-002/summary
+"timeInRangePct": 58.5, "timeBelowPct": 6.2, "timeVeryLowPct": 1.6,
+"timeAbovePct": 35.4, "cvPct": 36.2, "gmiPct": 6.9, "coveragePct": 100.0
+
+insights:
+  tir_below_target       Time in range (70 to 180 mg/dL) is below the 70% target.   {timeInRangePct: 58.5}
+  tbr_above_target       Time below 70 mg/dL is at or above the 4% limit.           {timeBelowPct: 6.2}
+  very_low_above_target  Time below 54 mg/dL is at or above the 1% limit.           {timeVeryLowPct: 1.6}
+  tar_above_target       Time above 180 mg/dL is above the 25% limit.               {timeAbovePct: 35.4}
+  high_variability       Glucose variability (CV) is above the 36% threshold.       {cvPct: 36.2}</pre>
+<p>subject-003, a sensor that was mostly off, has 39.4% coverage. The service refuses to interpret it and returns one insight, <code>insufficient_data</code>.</p>
+<pre>$ curl -s -XPOST localhost:8080/v1/readings -d '[{"deviceId":"d","subjectId":"subject-001","ts":1,"mgdl":5}]'
+{"accepted":0,"duplicates":0,"rejected":[{"index":0,"reason":"out_of_range"}]}</pre>
+
+<h2>What is in it</h2>
+<div class="grid">
+<div class="card"><h3>Safe to retry</h3><p>Ingest is idempotent on subject and timestamp. A client that times out can resend the whole batch. Out-of-order rows are accepted.</p></div>
+<div class="card"><h3>Bad data is visible</h3><p>Out-of-range, future, missing and zero timestamps are rejected with a reason, returned to the sender and counted by reason.</p></div>
+<div class="card"><h3>Grounded insights</h3><p>An insight is kept only if its evidence matches the summary field and its text has no dosing or treatment words. A future model plugs in behind the same guard.</p></div>
+<div class="card"><h3>Data lifecycle</h3><p>The log replays on start, and a purge drops readings older than a cutoff and rewrites the log.</p></div>
+<div class="card"><h3>Observable</h3><p>Prometheus counters for accepted, duplicate and rejected rows by reason, and request count and time per route.</p></div>
+<div class="card"><h3>Tested over a socket</h3><p>13 tests, including ingest to summary over a real HTTP server, token checks and an oversized batch. CI also boots the jar and queries it.</p></div>
+</div>
+
+<h2>Choices and what they cost</h2>
+<table>
+<tr><th>Chose</th><th>Instead of</th><th>Costs</th><th>Switch when</th></tr>
+<tr><td>JSONL log and in-memory index</td><td>A database</td><td>Memory, one writer</td><td>Data outgrows RAM or a second instance is needed</td></tr>
+<tr><td>First write wins on (subject, timestamp)</td><td>Versioned upsert</td><td>A corrected value for an old timestamp is ignored</td><td>Devices send corrections</td></tr>
+<tr><td>Reject and count at ingest</td><td>Accept and flag</td><td>Rejected rows are not stored</td><td>Someone needs to inspect or replay them</td></tr>
+<tr><td>Window ends at the latest reading</td><td>Window ends now</td><td>A stopped sensor looks current</td><td>Add a last-seen alert for production</td></tr>
+<tr><td>Rules behind a guard</td><td>A model with no guard</td><td>Fewer, blunter insights</td><td>A model can pass the same grounding checks</td></tr>
+</table>
+
+<h2>Not covered</h2>
+<p>No TLS, no per-user auth beyond one shared bearer token, no multi-instance deployment, no real device protocol and no regulated-software process.</p>
+
+<footer>By <a href="https://github.com/gerardrecinto">Gerard Recinto</a>. MIT license.</footer>
+</main>
+</body>
+</html>
